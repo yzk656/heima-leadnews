@@ -16,6 +16,10 @@ import org.springframework.util.DigestUtils;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * @author 杨振坤
+ * @date 2023/11/07
+ */
 @Service
 public class WmUserServiceImpl extends ServiceImpl<WmUserMapper, WmUser> implements WmUserService {
 
