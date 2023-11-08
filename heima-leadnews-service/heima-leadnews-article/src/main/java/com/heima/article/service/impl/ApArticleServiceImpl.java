@@ -7,6 +7,7 @@ import com.heima.article.mapper.ApArticleConfigMapper;
 import com.heima.article.mapper.ApArticleContentMapper;
 import com.heima.article.mapper.ApArticleMapper;
 import com.heima.article.service.ApArticleService;
+import com.heima.article.service.ArticleFreemarkerService;
 import com.heima.common.constants.ArticleConstants;
 import com.heima.model.article.dtos.ArticleDto;
 import com.heima.model.article.dtos.ArticleHomeDto;
@@ -36,6 +37,7 @@ public class ApArticleServiceImpl extends ServiceImpl<ApArticleMapper, ApArticle
 
     /**
      * 加载文章列表
+     *
      * @param dto
      * @param type 1：加载更多 2：加载最新
      * @return
@@ -45,28 +47,28 @@ public class ApArticleServiceImpl extends ServiceImpl<ApArticleMapper, ApArticle
         //校验参数
         //分页查询检验
         Integer size = dto.getSize();
-        if(size==null||size==0){
-            size=10;
+        if (size == null || size == 0) {
+            size = 10;
         }
         //分页的值值不超过50
-        size=Math.min(size, ArticleConstants.MAX_PAGE_SIZE);
+        size = Math.min(size, ArticleConstants.MAX_PAGE_SIZE);
         dto.setSize(size);
 
         //参数校验,默认加载更多
-        if(type==null||(!type.equals(ArticleConstants.LOADTYPE_LOAD_MORE)&&!type.equals(ArticleConstants.LOADTYPE_LOAD_NEW))){
-            type=ArticleConstants.LOADTYPE_LOAD_MORE;
+        if (type == null || (!type.equals(ArticleConstants.LOADTYPE_LOAD_MORE) && !type.equals(ArticleConstants.LOADTYPE_LOAD_NEW))) {
+            type = ArticleConstants.LOADTYPE_LOAD_MORE;
         }
 
         //频道参数校验
-        if (StringUtils.isBlank(dto.getTag())){
+        if (StringUtils.isBlank(dto.getTag())) {
             dto.setTag(ArticleConstants.DEFAULT_TAG);
         }
 
         //时间校验
-        if(dto.getMaxBehotTime()==null){
+        if (dto.getMaxBehotTime() == null) {
             dto.setMaxBehotTime(new Date());
         }
-        if(dto.getMinBehotTime()==null){
+        if (dto.getMinBehotTime() == null) {
             dto.setMinBehotTime(new Date());
         }
 
@@ -82,6 +84,9 @@ public class ApArticleServiceImpl extends ServiceImpl<ApArticleMapper, ApArticle
     @Autowired
     private ApArticleContentMapper apArticleContentMapper;
 
+    @Autowired
+    private ArticleFreemarkerService articleFreemarkerService;
+
     /**
      * 保存app端相关文章
      *
@@ -90,16 +95,23 @@ public class ApArticleServiceImpl extends ServiceImpl<ApArticleMapper, ApArticle
      */
     @Override
     public ResponseResult saveArticle(ArticleDto dto) {
+/*
+        try {
+            Thread.sleep(3000);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }*/
+
         //检查参数
-        if(dto==null){
+        if (dto == null) {
             return ResponseResult.errorResult(AppHttpCodeEnum.PARAM_INVALID);
         }
 
         ApArticle apArticle = new ApArticle();
-        BeanUtils.copyProperties(dto,apArticle);
+        BeanUtils.copyProperties(dto, apArticle);
 
         //判断是否存在id
-        if(dto.getId()==null){
+        if (dto.getId() == null) {
             //不存在id 保存文章、内容、配置
 
             //保存文章
@@ -115,7 +127,7 @@ public class ApArticleServiceImpl extends ServiceImpl<ApArticleMapper, ApArticle
             apArticleContent.setContent(dto.getContent());
             apArticleContentMapper.insert(apArticleContent);
 
-        }else {
+        } else {
             //存在id 修改文章、内容、配置
 
             //修改文章
@@ -126,6 +138,9 @@ public class ApArticleServiceImpl extends ServiceImpl<ApArticleMapper, ApArticle
             apArticleContent.setContent(dto.getContent());
             apArticleContentMapper.updateById(apArticleContent);
         }
+
+        //异步调用，生成静态文件上传到Minio中
+        articleFreemarkerService.buildArticleToMinio(apArticle, dto.getContent());
 
         return ResponseResult.okResult(apArticle.getId());
     }
