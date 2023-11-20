@@ -86,6 +86,7 @@ public class WmNewsAutoScanServiceImpl extends ServiceImpl<WmNewsMapper, WmNews>
 
             //审核成功，修改文章状态
             ResponseResult responseResult = saveAppArticle(wmNews);
+
             if (!responseResult.getCode().equals(200)) {
                 throw new RuntimeException("WmNewsAutoScanServiceImpl - 保存文章失败");
             }
