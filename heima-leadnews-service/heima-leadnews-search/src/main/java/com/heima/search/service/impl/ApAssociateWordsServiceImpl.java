@@ -46,7 +46,6 @@ public class ApAssociateWordsServiceImpl implements ApAssociateWordsService {
         Query query = Query.query(Criteria.where("associateWords").regex(".*?\\" + dto.getSearchWords() + ".*"));
         query.limit(dto.getPageSize());
         List<ApAssociateWords> apAssociateWords = mongoTemplate.find(query, ApAssociateWords.class);
-        System.err.println(apAssociateWords.size());
 
         return ResponseResult.okResult(apAssociateWords);
     }
