@@ -90,7 +90,10 @@ public class WmChannelServiceImpl extends ServiceImpl<WmChannelMapper, WmChannel
 
         //条件分页查询
         IPage page = new Page<>(dto.getPage(), dto.getSize());
-        page = page(page, Wrappers.<WmChannel>lambdaQuery().eq(StringUtils.isNotBlank(dto.getName()), WmChannel::getName, dto.getName()));
+        page = page(page, Wrappers.<WmChannel>lambdaQuery()
+                .like(StringUtils.isNotBlank(dto.getName()), WmChannel::getName, dto.getName())
+                .orderByDesc(WmChannel::getCreatedTime)
+        );
 
         ResponseResult responseResult = new PageResponseResult(dto.getPage(), dto.getSize(), (int) page.getTotal());
         responseResult.setData(page.getRecords());

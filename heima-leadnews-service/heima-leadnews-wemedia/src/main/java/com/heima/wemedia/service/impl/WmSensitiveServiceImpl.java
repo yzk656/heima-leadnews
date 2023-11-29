@@ -43,7 +43,10 @@ public class WmSensitiveServiceImpl extends ServiceImpl<WmSensitiveMapper, WmSen
 
         //分页查询
         IPage page = new Page(dto.getPage(), dto.getSize());
-        page = page(page, Wrappers.<WmSensitive>lambdaQuery().eq(StringUtils.isNotBlank(dto.getName()), WmSensitive::getSensitives, dto.getName()));
+        page = page(page, Wrappers.<WmSensitive>lambdaQuery()
+                .like(StringUtils.isNotBlank(dto.getName()), WmSensitive::getSensitives, dto.getName())
+                .orderByDesc(WmSensitive::getCreatedTime)
+        );
 
         //返回数据
         ResponseResult responseResult = new PageResponseResult(dto.getPage(), dto.getSize(), (int) page.getTotal());
