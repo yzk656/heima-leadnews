@@ -1,7 +1,11 @@
 package com.heima.user.service.impl;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.heima.model.common.dtos.PageRequestDto;
+import com.heima.model.common.dtos.PageResponseResult;
 import com.heima.model.common.dtos.ResponseResult;
 import com.heima.model.common.enums.AppHttpCodeEnum;
 import com.heima.model.user.dtos.LoginDto;
@@ -22,7 +26,7 @@ import java.util.Map;
 @Service
 @Transactional
 @Slf4j
-public class ApUserServiceImpl extends ServiceImpl<ApUserMapper, ApUser> implements ApUserService{
+public class ApUserServiceImpl extends ServiceImpl<ApUserMapper, ApUser> implements ApUserService {
     /**
      * app登录端功能
      *
@@ -33,10 +37,10 @@ public class ApUserServiceImpl extends ServiceImpl<ApUserMapper, ApUser> impleme
     public ResponseResult login(LoginDto dto) {
         //正常登录
         //查询用户信息
-        if(StringUtils.isNotBlank(dto.getPhone())&&StringUtils.isNotBlank(dto.getPassword())){
+        if (StringUtils.isNotBlank(dto.getPhone()) && StringUtils.isNotBlank(dto.getPassword())) {
             ApUser dbUser = getOne(Wrappers.<ApUser>lambdaQuery().eq(ApUser::getPhone, dto.getPhone()));
-            if(dbUser==null){
-                return ResponseResult.errorResult(AppHttpCodeEnum.AP_USER_DATA_NOT_EXIST,"用户不存在");
+            if (dbUser == null) {
+                return ResponseResult.errorResult(AppHttpCodeEnum.AP_USER_DATA_NOT_EXIST, "用户不存在");
             }
 
             //比对密码
@@ -44,7 +48,7 @@ public class ApUserServiceImpl extends ServiceImpl<ApUserMapper, ApUser> impleme
             String password = dto.getPassword();
             String md5DigestAsHex = DigestUtils.md5DigestAsHex((password + salt).getBytes());
             //判断
-            if(!md5DigestAsHex.equals(dbUser.getPassword())){
+            if (!md5DigestAsHex.equals(dbUser.getPassword())) {
                 return ResponseResult.errorResult(AppHttpCodeEnum.LOGIN_PASSWORD_ERROR);
             }
 
@@ -52,15 +56,15 @@ public class ApUserServiceImpl extends ServiceImpl<ApUserMapper, ApUser> impleme
             String token = AppJwtUtil.getToken(dbUser.getId().longValue());
             dbUser.setPassword("");
             dbUser.setSalt("");
-            Map<String,Object> map=new HashMap<>();
-            map.put("user",dbUser);
-            map.put("token",token);
+            Map<String, Object> map = new HashMap<>();
+            map.put("user", dbUser);
+            map.put("token", token);
 
             return ResponseResult.okResult(map);
-        }else {
+        } else {
             //游客登录
-            Map<String,Object> map=new HashMap<>();
-            map.put("token",AppJwtUtil.getToken(0L));
+            Map<String, Object> map = new HashMap<>();
+            map.put("token", AppJwtUtil.getToken(0L));
             return ResponseResult.okResult(map);
         }
     }
