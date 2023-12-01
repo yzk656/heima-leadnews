@@ -3,6 +3,7 @@ package com.heima.user.controller.v1;
 import com.heima.model.common.dtos.PageRequestDto;
 import com.heima.model.common.dtos.ResponseResult;
 import com.heima.model.user.dtos.ApUserRealnameDto;
+import com.heima.model.user.dtos.AuthDto;
 import com.heima.user.service.ApUserRealNameService;
 import com.heima.user.service.ApUserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,5 +22,15 @@ public class ApUserRealNameController {
     @PostMapping("/list")
     public ResponseResult list(@RequestBody ApUserRealnameDto dto) {
         return apUserRealNameService.list(dto);
+    }
+
+    @PostMapping("/authPass")
+    public ResponseResult pass(@RequestBody AuthDto dto){
+        return apUserRealNameService.pass(dto);
+    }
+
+    @PostMapping("/authFail")
+    public ResponseResult authFail(@RequestBody AuthDto dto){
+        return apUserRealNameService.authFail(dto);
     }
 }

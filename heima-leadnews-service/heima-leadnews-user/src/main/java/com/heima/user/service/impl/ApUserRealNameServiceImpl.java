@@ -4,11 +4,13 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.heima.common.constants.ApUserRealNameConstants;
 import com.heima.model.common.dtos.PageRequestDto;
 import com.heima.model.common.dtos.PageResponseResult;
 import com.heima.model.common.dtos.ResponseResult;
 import com.heima.model.common.enums.AppHttpCodeEnum;
 import com.heima.model.user.dtos.ApUserRealnameDto;
+import com.heima.model.user.dtos.AuthDto;
 import com.heima.model.user.pojos.ApUser;
 import com.heima.model.user.pojos.ApUserRealname;
 import com.heima.user.mapper.ApUserRealNameMapper;
@@ -47,5 +49,55 @@ public class ApUserRealNameServiceImpl extends ServiceImpl<ApUserRealNameMapper,
         responseResult.setData(page.getRecords());
 
         return responseResult;
+    }
+
+
+    /**
+     * 通过审核
+     *
+     * @param dto
+     * @return
+     */
+    @Override
+    public ResponseResult pass(AuthDto dto) {
+
+        //参数校验
+        if (dto==null){
+            return ResponseResult.errorResult(AppHttpCodeEnum.PARAM_INVALID);
+        }
+
+        //获取当前用户
+        ApUserRealname user = getById(dto.getId());
+        update(Wrappers.<ApUserRealname>lambdaUpdate()
+                .set(user.getStatus()==1,ApUserRealname::getStatus, ApUserRealNameConstants.AP_USER_REAL_NAME_PASS)
+                .eq(ApUserRealname::getId,dto.getId())
+        );
+
+        return ResponseResult.okResult(AppHttpCodeEnum.SUCCESS);
+    }
+
+    /**
+     * 审核失败
+     *
+     * @param dto
+     * @return
+     */
+    @Override
+    public ResponseResult authFail(AuthDto dto) {
+
+        //参数校验
+        if(dto==null){
+            return ResponseResult.errorResult(AppHttpCodeEnum.PARAM_INVALID);
+        }
+
+        //获取当前用户
+        ApUserRealname user = getById(dto.getId());
+        update(Wrappers.<ApUserRealname>lambdaUpdate()
+                .set(user.getStatus()==1,ApUserRealname::getStatus,ApUserRealNameConstants.AP_USER_REAL_NAME_FAIL)
+                .set(dto.getMsg()!=null,ApUserRealname::getReason,dto.getMsg())
+                .eq(ApUserRealname::getId,dto.getId())
+        );
+
+        return ResponseResult.okResult(AppHttpCodeEnum.SUCCESS);
     }
 }

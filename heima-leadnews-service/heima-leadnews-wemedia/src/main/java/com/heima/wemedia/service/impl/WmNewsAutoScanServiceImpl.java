@@ -71,18 +71,18 @@ public class WmNewsAutoScanServiceImpl extends ServiceImpl<WmNewsMapper, WmNews>
 
             //通过阿里云内容安全服务进行审核
             //审核文本内容
-            // flag = handleTextScan((String) imageAndContent.get("content"), wmNews);
-            flag = true;
+            flag = handleTextScan((String) imageAndContent.get("content"), wmNews);
+            //flag = true;
             if (!flag) {
                 return;
             }
 
-            //审核图片
-            //flag = handleImageScan((List<String>) imageAndContent.get("images"), wmNews);
-            flag = true;
+/*            //审核图片
+            flag = handleImageScan((List<String>) imageAndContent.get("images"), wmNews);
+            //flag = true;
             if (!flag) {
                 return;
-            }
+            }*/
 
             //审核成功，修改文章状态
             ResponseResult responseResult = saveAppArticle(wmNews);
@@ -148,7 +148,8 @@ public class WmNewsAutoScanServiceImpl extends ServiceImpl<WmNewsMapper, WmNews>
      *
      * @param wmNews
      */
-    private ResponseResult saveAppArticle(WmNews wmNews) {
+    @Override
+    public ResponseResult saveAppArticle(WmNews wmNews) {
         //属性拷贝
         ArticleDto articleDto = new ArticleDto();
         BeanUtils.copyProperties(wmNews, articleDto);
@@ -264,7 +265,10 @@ public class WmNewsAutoScanServiceImpl extends ServiceImpl<WmNewsMapper, WmNews>
 
         boolean flag = true;
 
-        try {
+        flag = false;
+        updateWmNews(wmNews, 3, "当前文章存在不确定内容");
+
+/*        try {
             Map map = greenTextScan.greeTextScan(content);
             if (map != null) {
                 //审核失败
@@ -282,7 +286,7 @@ public class WmNewsAutoScanServiceImpl extends ServiceImpl<WmNewsMapper, WmNews>
         } catch (Exception e) {
             flag = false;
             e.printStackTrace();
-        }
+        }*/
 
         return flag;
     }

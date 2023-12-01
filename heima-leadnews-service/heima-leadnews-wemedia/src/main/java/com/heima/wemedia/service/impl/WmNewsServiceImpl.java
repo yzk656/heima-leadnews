@@ -12,11 +12,14 @@ import com.heima.common.exception.CustomException;
 import com.heima.model.common.dtos.PageResponseResult;
 import com.heima.model.common.dtos.ResponseResult;
 import com.heima.model.common.enums.AppHttpCodeEnum;
+import com.heima.model.wemedia.dtos.NewsAuthDto;
 import com.heima.model.wemedia.dtos.WmNewsDto;
 import com.heima.model.wemedia.dtos.WmNewsPageReqDto;
 import com.heima.model.wemedia.pojos.WmMaterial;
 import com.heima.model.wemedia.pojos.WmNews;
 import com.heima.model.wemedia.pojos.WmNewsMaterial;
+import com.heima.model.wemedia.pojos.WmUser;
+import com.heima.model.wemedia.vo.WmNewsVo;
 import com.heima.utils.thread.WmThreadLocalUtil;
 import com.heima.wemedia.mapper.WmMaterialMapper;
 import com.heima.wemedia.mapper.WmNewsMapper;
@@ -24,6 +27,7 @@ import com.heima.wemedia.mapper.WmNewsMaterialMapper;
 import com.heima.wemedia.service.WmNewsAutoScanService;
 import com.heima.wemedia.service.WmNewsService;
 import com.heima.wemedia.service.WmNewsTaskService;
+import com.heima.wemedia.service.WmUserService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.checkerframework.checker.units.qual.A;
@@ -318,6 +322,119 @@ public class WmNewsServiceImpl extends ServiceImpl<WmNewsMapper, WmNews> impleme
                 map.put("articleId", wmNews.getArticleId());
                 map.put("enable", wmNewsDto.getEnable());
                 kafkaTemplate.send(WmNewsMessageConstants.WM_NEWS_UP_OR_DOWN_TOPIC, JSON.toJSONString(map));
+            }
+        }
+
+        return ResponseResult.okResult(AppHttpCodeEnum.SUCCESS);
+    }
+
+    /**
+     * 文章列表查询（需要验证的）
+     *
+     * @param dto
+     * @return
+     */
+    @Override
+    public ResponseResult listVo(NewsAuthDto dto) {
+
+        //参数校验
+        if (dto == null) {
+            return ResponseResult.errorResult(AppHttpCodeEnum.PARAM_INVALID);
+        }
+        dto.checkParam();
+
+        //分页查询
+        IPage page = new Page(dto.getPage(), dto.getSize());
+        page = page(page, Wrappers.<WmNews>lambdaQuery()
+                .eq(dto.getStatus() != null, WmNews::getStatus, dto.getStatus())
+                .eq(StringUtils.isNotBlank(dto.getTitle()), WmNews::getTitle, dto.getTitle())
+        );
+
+        //参数赋值
+        ResponseResult responseResult = new PageResponseResult(dto.getPage(), dto.getSize(), (int) page.getTotal());
+        responseResult.setData(page.getRecords());
+
+        return responseResult;
+    }
+
+    @Autowired
+    private WmUserService wmUserService;
+
+    /**
+     * 查看文章详情
+     *
+     * @param id
+     * @return
+     */
+    @Override
+    public ResponseResult newsDetail(Integer id) {
+
+        //参数校验
+        if (id == null) {
+            return ResponseResult.errorResult(AppHttpCodeEnum.PARAM_INVALID);
+        }
+
+        //查询文章
+        WmNews wmNews = getById(id);
+        if (wmNews == null) {
+            return ResponseResult.errorResult(AppHttpCodeEnum.DATA_NOT_EXIST, "文章不存在");
+        }
+
+        //查询作者
+        WmUser wmUser = wmUserService.getById(wmNews.getUserId());
+        WmNewsVo wmNewsVo = new WmNewsVo();
+        if (wmNewsVo != null) {
+            wmNewsVo.setAuthorName(wmUser.getName());
+        }
+
+        //进行赋值
+        BeanUtils.copyProperties(wmNews, wmNewsVo);
+
+        return ResponseResult.okResult(wmNewsVo);
+    }
+
+    /**
+     * 通过审核
+     *
+     * @param dto
+     * @return
+     */
+    @Override
+    public ResponseResult updateStatus(Short status, NewsAuthDto dto) {
+
+        //参数校验
+        if (dto == null) {
+            return ResponseResult.errorResult(AppHttpCodeEnum.PARAM_INVALID);
+        }
+
+        //查询文章信息
+        WmNews wmNews = getById(dto.getId());
+        if (wmNews == null) {
+            return ResponseResult.errorResult(AppHttpCodeEnum.DATA_NOT_EXIST);
+        }
+
+
+        //更新
+        wmNews.setStatus(dto.getStatus().shortValue());
+        if(StringUtils.isNotBlank(dto.getMsg())){
+            wmNews.setReason(dto.getMsg());
+        }
+        updateById(wmNews);
+/*        update(Wrappers.<WmNews>lambdaUpdate()
+                .set(WmNews::getStatus, status)
+                .set(StringUtils.isNotBlank(dto.getMsg()), WmNews::getReason, dto.getMsg())
+                .eq(dto.getId() != null, WmNews::getId, dto.getId())
+                .eq(WmNews::getStatus, 3)
+        );*/
+
+        //审核成功
+        if(status.equals(WemediaConstants.WM_NEWS_PASS)){
+            //创建App文章
+            ResponseResult responseResult = wmNewsAutoScanService.saveAppArticle(wmNews);
+            if(responseResult.getCode().equals(200)){
+                wmNews.setArticleId((Long) responseResult.getData());
+                wmNews.setStatus(WmNews.Status.PUBLISHED.getCode());
+                updateById(wmNews);
             }
         }
 
