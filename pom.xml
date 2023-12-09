@@ -41,7 +41,7 @@
         <mysql.version>5.1.46</mysql.version>
         <mybatis.version>3.5.1</mybatis.version>
         <mybatis.spring.version>2.0.1</mybatis.spring.version>
-        <mybatis.plus.version>3.4.1</mybatis.plus.version>
+            <mybatis.plus.version>3.4.1</mybatis.plus.version>
         <lang3.version>3.5</lang3.version>
         <pagehelper.version>1.2.3</pagehelper.version>
         <jsoup.version>1.10.2</jsoup.version>

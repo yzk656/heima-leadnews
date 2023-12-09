@@ -25,8 +25,10 @@ public class ProducerQuickStart {
          * 消息的key
          * 消息的value
          */
-        ProducerRecord<String, String> producerRecord = new ProducerRecord<>("topic-first", "key-001", "hello-kafka");
-        kafkaProducer.send(producerRecord);
+        for (int i = 0; i < 5; i++) {
+            ProducerRecord<String, String> producerRecord = new ProducerRecord<>("itcast-topic-input",  "hello kafka");
+            kafkaProducer.send(producerRecord);
+        }
 
         //关闭消息通道,必须关闭，否则关闭不成功
         kafkaProducer.close();
